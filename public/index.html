@@ -315,12 +315,13 @@
                 document.getElementById('manager-add-range').style.display = "block";
                 document.getElementById('menu-traffic').style.display = "block";
                 document.getElementById('menu-requests').style.display = "block"; 
-            } else {
+                        } else {
                 isManager = false;
                 document.getElementById('display-user-role').innerText = `User: ${user} 👤`;
-                document.getElementById('menu-traffic').style.display = "none";
+                document.getElementById('menu-traffic').style.display = "block"; // NOW USERS CAN SEE IT
                 document.getElementById('menu-requests').style.display = "none"; 
             }
+          
 
             document.getElementById('login-wrapper').style.display = 'none';
             document.getElementById('dashboard-wrapper').style.display = 'flex';
