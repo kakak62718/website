@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DEEP SMS PANEL</title>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+        /* Login Page Styling */
+        #login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #2b2b40; 
+            background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgFQbdwcLkTvjWRf3R7YiEL8Ilz34jdTNlyqH-EmdXtuyYAnWO_yi0zHR6S2wffvdqqvl7hTbeLjkHAslQ8_FVNFnqs8ohualK8kHwBIO_t4qGI5chM54EChiQs_oMq9Sw86IDVXdtV_5pjT0Re0U1TtrH0UIV6zuzY8KtMGj-ZMKItkYybRKH4c7r0DW9L/s1080/Screenshot_2026-08-03-12-56-28-38_948cd9899890cbd5c2798760b2b95377.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 20px 0;
+        }
+        .login-card {
+            background-color: rgba(255, 255, 255, 0.45); 
+            backdrop-filter: blur(10px); 
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); 
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            margin: auto;
+            border: 1px solid rgba(255, 255, 255, 0.3); 
+        }
+        .login-card h2 { color: #111; margin-bottom: 20px; text-shadow: 0px 1px 2px rgba(255,255,255,0.8); }
+        .login-card input {
+            width: 100%; padding: 12px; margin: 8px 0; border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 5px; box-sizing: border-box; background-color: rgba(255, 255, 255, 0.7); color: #333;
+        }
+        .remember-box { display: flex; align-items: center; margin: 5px 0 15px 0; font-size: 14px; font-weight: bold; }
+        .remember-box input { width: 16px; height: 16px; margin-right: 8px; cursor: pointer; }
+        .login-card button {
+            width: 100%; padding: 12px; background-color: #0056b3; color: white; border: none;
+            border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px;
+        }
+        .login-card button:hover { background-color: #004494; }
+        .create-account-link { display: block; margin-top: 15px; color: #003366; cursor: pointer; font-size: 14px; font-weight: bold; }
+        #register-section, #reg-message { display: none; margin-top: 20px; }
+        #reg-message { padding: 15px; background-color: #d4edda; color: #155724; border-radius: 5px; text-align: left; }
+
+        /* Dashboard Styling */
+        #dashboard-wrapper { display: none; height: 100vh; background-color: #ecf0f1; }
+        .sidebar { width: 260px; background-color: #343a40; color: white; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; background-color: #212529; text-align: center; font-size: 20px; font-weight: bold; }
+        .user-profile-box { padding: 15px 20px; background-color: #3a3f44; border-bottom: 1px solid #495057; display: flex; flex-direction: column; gap: 5px; }
+        .user-name { font-weight: bold; color: #ffc107; }
+        .logout-link { color: #dc3545; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+        .sidebar-menu li { padding: 12px 20px; border-bottom: 1px solid #3a3f44; cursor: pointer; font-size: 14px; }
+        .sidebar-menu li:hover { background-color: #495057; }
+        .sidebar-menu li.active { background-color: #ffc107; color: #000; font-weight: bold; }
+        .main-container { flex-grow: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .top-header { background-color: white; padding: 15px 30px; display: flex; justify-content: space-between; border-bottom: 1px solid #dee2e6; }
+        .top-header .title { font-size: 18px; font-weight: bold; }
+        .content-body { padding: 30px; }
+        
+        .panel-section { display: none; }
+        .panel-section.active-panel { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; text-align: center; border-top: 4px solid #0056b3; }
+        .card button, .card input[type="file"] { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; box-sizing: border-box; }
+        .btn-action { background-color: #0056b3; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .btn-download { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .api-result { background: #ffffff; padding: 15px; margin-top: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid #dee2e6; }
+
+        /* Table Styling */
+        .sms-table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; background-color: #fff; border-radius: 6px; overflow: hidden; }
+        .sms-table th { background-color: #0056b3; color: #ffffff; padding: 12px 15px; font-weight: 600; white-space: nowrap; }
+        .sms-table td { padding: 12px 15px; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
+        .payout-badge { background-color: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-weight: bold; font-size: 12px; }
+        .cli-tag { background-color: #e9ecef; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        
+        /* Requests */
+        .request-item { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; margin-top: 10px; display: flex; justify-content: space-between; }
+        .btn-approve { background-color: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- ================= LOGIN PAGE ================= -->
+    <div id="login-wrapper">
+        <div class="login-card">
+            <h2>DEEP SMS PANEL 🔑</h2>
+            <div id="login-section">
+                <input type="text" id="username" placeholder="Enter Username" />
+                <input type="password" id="password" placeholder="Enter Password" />
+                <div class="remember-box">
+                    <input type="checkbox" id="rememberMe" /> <label for="rememberMe">Remember me</label>
+                </div>
+                <button onclick="login()">Login</button>
+                <a class="create-account-link" onclick="toggleRegister()">Create an account</a>
+            </div>
+
+            <div id="register-section">
+                <h3 style="margin-top:0;">Register New Account</h3>
+                <input type="text" id="reg-user" placeholder="Enter Username" />
+                <input type="password" id="reg-pass" placeholder="Enter Password" />
+                <input type="email" id="reg-email" placeholder="Gmail ID" />
+                <input type="text" id="reg-wa" placeholder="WhatsApp Number" />
+                <button onclick="submitRequest()" style="background-color: #28a745;">Submit Request</button>
+                <a class="create-account-link" onclick="toggleRegister()">Back to Login</a>
+            </div>
+            
+            <div id="reg-message"><strong>REQUEST SUBMITTED</strong><br><br>Wait for approval.</div>
+        </div>
+    </div>
+
+    <!-- ================= DASHBOARD ================= -->
+    <div id="dashboard-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-header">DEEP SMS PANEL</div>
+            <div class="user-profile-box">
+                <span id="display-user-role" class="user-name">User</span>
+                <a class="logout-link" onclick="logout()">🔓 Logout</a>
+            </div>
+            <ul class="sidebar-menu">
+                <li id="menu-dashboard" onclick="switchTab('dashboard')">📊 Dashboard</li>
+                <li id="menu-traffic" onclick="switchTab('traffic')">🚦 Live Traffic</li>
+                <li id="menu-requests" onclick="switchTab('requests')">👥 Account Requests</li>
+            </ul>
+        </div>
+
+        <div class="main-container">
+            <div class="top-header">
+                <div class="title" id="panel-title">Dashboard Overview</div>
+                <div class="date-time" id="live-clock">Loading time...</div>
+            </div>
+
+            <div class="content-body">
+                
+                <!-- Manager Panel -->
+                <div id="manager-panel" class="panel-section">
+                    <h3>Manager Dashboard 👑</h3>
+                    <div class="grid-container" style="margin-bottom: 20px;">
+                        <div class="card">
+                            <h3>Section 1 🗃️</h3>
+                            <input type="file" id="file1" accept=".txt" />
+                            <button class="btn-action" onclick="uploadFile('file1', 'storedFile1')">Upload File 1</button>
+                        </div>
+                        <div class="card">
+                            <h3>Section 2 🗃️</h3>
+                            <input type="file" id="file2" accept=".txt" />
+                            <button class="btn-action" onclick="uploadFile('file2', 'storedFile2')">Upload File 2</button>
+                        </div>
+                    </div>
+                    <div style="background: white; padding: 20px; border-radius: 8px;">
+                        <h3>Manager Live Traffic Feed 🌐</h3>
+                        <div id="apiResult" class="api-result">Connecting to local server feed...</div>
+                    </div>
+                </div>
+
+                <!-- User Panel -->
+                <div id="user-panel" class="panel-section">
+                    <h3>User Dashboard 👤</h3>
+                    <div class="grid-container">
+                        <div class="card">
+                            <h3>File Section 1 🗃️</h3>
+                            <button class="btn-download" onclick="downloadFile('storedFile1', 'File_1.txt')">⬇️ Download File 1</button>
+                        </div>
+                        <div class="card">
+                            <h3>File Section 2 🗃️</h3>
+                            <button class="btn-download" onclick="downloadFile('storedFile2', 'File_2.txt')">⬇️ Download File 2</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Traffic Panel -->
+                <div id="traffic-panel" class="panel-section">
+                    <h3>Live Traffic Monitor 🚦</h3>
+                    <div id="trafficResult" class="api-result">Connecting to secure backend...</div>
+                </div>
+                
+                <!-- Requests Panel -->
+                <div id="requests-panel" class="panel-section">
+                    <h3>Account Requests 👥</h3>
+                    <div id="requests-container"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= LOGIC ================= -->
+    <script>
+        let currentRole = '';
+
+        if (!localStorage.getItem('pendingRequests')) localStorage.setItem('pendingRequests', JSON.stringify([]));
+        if (!localStorage.getItem('approvedUsers')) localStorage.setItem('approvedUsers', JSON.stringify([{ user: "Test", pass: "123" }]));
+
+        window.onload = () => {
+            setInterval(() => document.getElementById('live-clock').innerText = new Date().toLocaleString(), 1000);
+            if (localStorage.getItem('rememberedUser')) {
+                document.getElementById('username').value = localStorage.getItem('rememberedUser');
+                document.getElementById('password').value = localStorage.getItem('rememberedPass');
+                login();
+            }
+        };
+
+        function toggleRegister() {
+            const isReg = document.getElementById('register-section').style.display === 'block';
+            document.getElementById('register-section').style.display = isReg ? 'none' : 'block';
+            document.getElementById('login-section').style.display = isReg ? 'block' : 'none';
+        }
+
+        function submitRequest() {
+            const user = document.getElementById('reg-user').value;
+            const pass = document.getElementById('reg-pass').value;
+            if(!user || !pass) return alert("Fill all fields");
+            
+            let reqs = JSON.parse(localStorage.getItem('pendingRequests'));
+            reqs.push({ user, pass });
+            localStorage.setItem('pendingRequests', JSON.stringify(reqs));
+            
+            document.getElementById('register-section').style.display = 'none';
+            document.getElementById('reg-message').style.display = 'block';
+        }
+
+        function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            
+            if (user === "Kite" && pass === "prince") {
+                currentRole = 'manager';
+                document.getElementById('display-user-role').innerText = "Manager: Kite 👑";
+            } else {
+                const users = JSON.parse(localStorage.getItem('approvedUsers'));
+                if (users.find(u => u.user === user && u.pass === pass)) {
+                    currentRole = 'user';
+                    document.getElementById('display-user-role').innerText = `User: ${user} 👤`;
+                } else {
+                    return alert("Invalid credentials or unapproved account.");
+                }
+            }
+
+            if(document.getElementById('rememberMe').checked) {
+                localStorage.setItem('rememberedUser', user);
+                localStorage.setItem('rememberedPass', pass);
+            }
+            
+            document.getElementById('login-wrapper').style.display = 'none';
+            document.getElementById('dashboard-wrapper').style.display = 'flex';
+            switchTab('dashboard');
+            fetchSecureData();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.panel-section').forEach(p => p.classList.remove('active-panel'));
+            document.querySelectorAll('.sidebar-menu li').forEach(l => l.classList.remove('active'));
+            
+            document.getElementById('menu-' + tab).classList.add('active');
+            
+            if (tab === 'dashboard') {
+                document.getElementById('panel-title').innerText = currentRole === 'manager' ? "Manager Control" : "User Portal";
+                document.getElementById(currentRole === 'manager' ? 'manager-panel' : 'user-panel').classList.add('active-panel');
+            } else if (tab === 'traffic') {
+                document.getElementById('panel-title').innerText = "Live Traffic";
+                document.getElementById('traffic-panel').classList.add('active-panel');
+                fetchSecureData();
+            } else if (tab === 'requests' && currentRole === 'manager') {
+                document.getElementById('panel-title').innerText = "Requests";
+                document.getElementById('requests-panel').classList.add('active-panel');
+                renderRequests();
+            }
+        }
+
+        function renderRequests() {
+            const reqs = JSON.parse(localStorage.getItem('pendingRequests'));
+            const container = document.getElementById('requests-container');
+            container.innerHTML = reqs.length ? '' : '<p>No pending requests.</p>';
+            
+            reqs.forEach((r, i) => {
+                container.innerHTML += `<div class="request-item">
+                    <span>User: ${r.user}</span>
+                    <button class="btn-approve" onclick="approve(${i})">Approve</button>
+                </div>`;
+            });
+        }
+
+        function approve(i) {
+            let reqs = JSON.parse(localStorage.getItem('pendingRequests'));
+            let users = JSON.parse(localStorage.getItem('approvedUsers'));
+            users.push(reqs[i]);
+            reqs.splice(i, 1);
+            localStorage.setItem('pendingRequests', JSON.stringify(reqs));
+            localStorage.setItem('approvedUsers', JSON.stringify(users));
+            renderRequests();
+        }
+
+        function logout() {
+            currentRole = '';
+            document.getElementById('dashboard-wrapper').style.display = 'none';
+            document.getElementById('login-wrapper').style.display = 'flex';
+        }
+
+        function uploadFile(id, key) {
+            const file = document.getElementById(id).files[0];
+            if(!file) return alert("Select file");
+            const reader = new FileReader();
+            reader.onload = e => { localStorage.setItem(key, e.target.result); alert("Uploaded!"); };
+            reader.readAsText(file);
+        }
+
+        function downloadFile(key, name) {
+            const content = localStorage.getItem(key);
+            if(!content) return alert("Not uploaded yet.");
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([content]));
+            a.download = name;
+            a.click();
+        }
+         // ==========================================
+        // FETCHING DATA FROM YOUR RENDER BACKEND
+        // ==========================================
+        const RENDER_BACKEND_URL = "https://website-6z5g.onrender.com"; 
+
+        async function fetchSecureData() {
+            if (!currentRole) return;
+            const targetId = document.getElementById('manager-panel').classList.contains('active-panel') ? 'apiResult' : 'trafficResult';
+            
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/live-traffic`); 
+                const data = await res.json();
+                
+                let html = `<table class="sms-table"><tr><th>Date</th><th>Number</th><th>CLI</th><th>Message</th><th>Payout</th></tr>`;
+                data.data.forEach(i => {
+                    html += `<tr><td>${i.dt}</td><td>${i.num}</td><td><span class="cli-tag">${i.cli}</span></td><td>${i.message}</td><td><span class="payout-badge">$${i.payout}</span></td></tr>`;
+                });
+                document.getElementById(targetId).innerHTML = html + "</table>";
+                
+            } catch (err) {
+                document.getElementById(targetId).innerText = "Error loading data from Render backend.";
+            }
+        }
+
+        // Auto-refresh every 3 seconds
+        setInterval(fetchSecureData, 3000);
+    </script>
+</body>
+</html>
+
+        
