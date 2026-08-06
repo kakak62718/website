@@ -56,10 +56,49 @@ app.post('/api/request-numbers', (req, res) => {
     const range = ranges.find(r => r.prefix === prefix);
     if (!range) return res.status(404).json({ success: false, message: "Range not found" });
     
-    // Check if there are enough numbers left in the uploaded list
-    if (range.availableNumbers.length < reqQty) {
-        return res.status(400).json({ success: false, message: `Only ${range.availableNumbers.length} numbers available in this range.` });
-    }
+            // Check if user is remembered on page load
+        window.onload = function() {
+            const savedUser = localStorage.getItem('deepSmsUser');
+            const savedPass = localStorage.getItem('deepSmsPass');
+            if (savedUser && savedPass) {
+                document.getElementById('username').value = savedUser;
+                document.getElementById('password').value = savedPass;
+                document.getElementById('remember-me').checked = true;
+            }
+        };
+
+        function login() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const remember = document.getElementById('remember-me').checked;
+            
+            if(!user) return alert("Enter a username");
+
+            // Handle Remember Me
+            if (remember) {
+                localStorage.setItem('deepSmsUser', user);
+                localStorage.setItem('deepSmsPass', pass);
+            } else {
+                localStorage.removeItem('deepSmsUser');
+                localStorage.removeItem('deepSmsPass');
+            }
+
+            loggedInUser = user;
+            if (user === "Kite" && pass === "prince") {
+                isManager = true;
+                document.getElementById('display-user-role').innerText = "Manager: Kite 👑";
+                document.getElementById('manager-add-range').style.display = "block";
+            } else {
+                isManager = false;
+                document.getElementById('display-user-role').innerText = `User: ${user} 👤`;
+                document.getElementById('menu-traffic').style.display = "none";
+            }
+
+            document.getElementById('login-wrapper').style.display = 'none';
+            document.getElementById('dashboard-wrapper').style.display = 'flex';
+            switchTab('dashboard');
+        }
+
 
     // Extract exactly the amount of numbers requested and REMOVE them from the main list
     const assignedNumbers = range.availableNumbers.splice(0, reqQty);
