@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+divvDOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -49,15 +49,28 @@
 </head>
 <body>
 
-    <!-- LOGIN PAGE -->
+        <!-- LOGIN PAGE -->
     <div id="login-wrapper">
         <div class="login-card">
             <h2>DEEP SMS PANEL 🔑</h2>
             <input type="text" id="username" placeholder="Username" />
             <input type="password" id="password" placeholder="Password" />
+            
+            <div style="text-align: left; margin: 10px 0; font-size: 14px; color: #333;">
+                <input type="checkbox" id="remember-me" />
+                <label for="remember-me">Remember me</label>
+            </div>
+            
             <button onclick="login()">Login</button>
+            
+            <div style="margin-top: 20px; font-size: 13px; color: #111;">
+                <p>Don't have an account?</p>
+                <p>Contact manager for approval:<br>
+                <a href="mailto:kiteprincepanel@gmail.com" style="color: #0056b3; font-weight: bold; text-decoration: none;">kiteprincepanel@gmail.com</a></p>
+            </div>
         </div>
     </div>
+
 
     <!-- DASHBOARD -->
     <div id="dashboard-wrapper">
