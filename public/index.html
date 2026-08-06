@@ -102,7 +102,6 @@
             <input type="email" id="reg-email" placeholder="Enter your Gmail ID" />
             <input type="text" id="reg-whatsapp" placeholder="WhatsApp number" />
             
-            <!-- Added id="reg-btn" here so it doesn't crash! -->
             <button id="reg-btn" onclick="submitRegister()">Create</button>
             <a onclick="showLogin()" class="create-account-link">Already have an account? Login</a>
         </div>
@@ -122,8 +121,6 @@
                 <li id="menu-mynumbers" onclick="switchTab('mynumbers')">📱 My Numbers</li>
                 <li id="menu-mysms" onclick="switchTab('mysms')">💬 My SMS</li>
                 <li id="menu-traffic" onclick="switchTab('traffic')">🚦 Master Traffic</li>
-                
-                <!-- Account Requests Tab (Manager Only) -->
                 <li id="menu-requests" onclick="switchTab('requests')" style="display:none; color: #00d4ff;">👥 Account Requests</li>
             </ul>
         </div>
@@ -236,6 +233,7 @@
             document.getElementById('login-wrapper').style.display = 'flex';
         }
 
+        // UPDATED BULLETPROOF REGISTER FUNCTION
         async function submitRegister() {
             const username = document.getElementById('reg-username').value;
             const password = document.getElementById('reg-password').value;
@@ -258,9 +256,15 @@
                     body: JSON.stringify({ username, password, email, whatsapp })
                 });
                 
+                // Safety check: Did the backend actually respond properly?
+                if (!res.ok) {
+                    throw new Error("Backend server is not ready or missing the update.");
+                }
+
                 const data = await res.json();
                 alert(data.message);
                 
+                // Clear inputs
                 document.getElementById('reg-username').value = '';
                 document.getElementById('reg-password').value = '';
                 document.getElementById('reg-email').value = '';
@@ -268,9 +272,10 @@
                 showLogin();
                 
             } catch (err) {
-                alert("Error sending request. The server might be asleep, wait a moment and try again.");
+                alert("Connection failed! Please make sure your server.js file on GitHub has the newest code.");
                 console.error(err);
             } finally {
+                // This ensures the button ALWAYS unfreezes, no matter what happens
                 btn.innerText = "Create";
                 btn.disabled = false;
             }
