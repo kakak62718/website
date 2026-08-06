@@ -7,7 +7,7 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; height: 100vh; }
         
-        /* Login & Register Page Styling (Glassmorphism) */
+        /* Login & Register Page Styling */
         .auth-wrapper { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #2b2b40; background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgFQbdwcLkTvjWRf3R7YiEL8Ilz34jdTNlyqH-EmdXtuyYAnWO_yi0zHR6S2wffvdqqvl7hTbeLjkHAslQ8_FVNFnqs8ohualK8kHwBIO_t4qGI5chM54EChiQs_oMq9Sw86IDVXdtV_5pjT0Re0U1TtrH0UIV6zuzY8KtMGj-ZMKItkYybRKH4c7r0DW9L/s1080/Screenshot_2026-08-03-12-56-28-38_948cd9899890cbd5c2798760b2b95377.jpg'); background-size: cover; background-position: center; }
         
         #register-wrapper { display: none; } 
@@ -51,15 +51,17 @@
         .btn-purple { background-color: #6f42c1; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-purple:hover { background-color: #59359a; }
         .payout-badge { background-color: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: white; width: 400px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .modal-header { padding: 15px 20px; font-size: 20px; font-weight: bold; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; }
+        .modal-box { background: white; width: 400px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-header { padding: 15px 20px; font-size: 20px; font-weight: bold; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
         .modal-close { cursor: pointer; font-size: 20px; color: #666; }
-        .modal-body { padding: 20px; }
+        .modal-body { padding: 25px 20px; }
         .modal-body label { display: block; margin-bottom: 5px; color: #555; font-size: 14px; }
         .modal-body input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .modal-footer { padding: 15px 20px; text-align: right; border-top: 1px solid #dee2e6; background: #f8f9fa; }
+        .modal-footer { padding: 15px 20px; text-align: right; border-top: 1px solid #f0f0f0; background: white; }
         .btn-cancel { background: transparent; border: none; color: #333; font-weight: bold; margin-right: 15px; cursor: pointer; }
+        
         .manager-input-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
         .manager-input-row input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 
@@ -170,7 +172,7 @@
                 </div>
 
                 <div id="mysms-panel" class="panel-section">
-                    <h3>My SMS Traffic (Payout: $0.01/msg)</h3>
+                    <h3>My SMS Traffic (Payout: $0.012/msg)</h3>
                     <div id="mysms-table-container">Loading your data...</div>
                 </div>
 
@@ -195,19 +197,21 @@
 
     <!-- Request Modal -->
     <div id="request-modal" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
+        <div class="modal-box" style="border-radius: 12px;">
+            <div class="modal-header" style="border-bottom: 1px solid #f0f0f0;">
                 Request Numbers
                 <span class="modal-close" onclick="closeModal()">×</span>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 25px 20px;">
                 <label>Payment Term</label>
-                <input type="text" value="Weekly (Payout - $ 0.01)" disabled style="background:#f1f1f1;" />
-                <label>Quantity</label>
-                <input type="number" id="request-quantity" value="70" />
+                <input type="text" value="Weekly (Payout - $ 0.012)" disabled style="background:#fff; border: 1px solid #e0e0e0; color: #333;" />
+                
+                <label style="margin-top: 15px;">Quantity</label>
+                <input type="number" id="request-quantity" value="70" min="1" max="200" style="border: 1px solid #e0e0e0;" />
+                
                 <input type="hidden" id="request-prefix" />
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="background: white; border-top: 1px solid #f0f0f0;">
                 <button class="btn-cancel" onclick="closeModal()">Close</button>
                 <button class="btn-purple" onclick="submitRequest()">Request</button>
             </div>
@@ -215,9 +219,7 @@
     </div>
 
     <script>
-        const RENDER_BACKEND_URL = "https://website-production-02e8.up.railway.app";
-        
-        
+        const RENDER_BACKEND_URL = "https://website-production-02e8.up.railway.app"; 
 
         let loggedInUser = '';
         let isManager = false;
@@ -235,7 +237,6 @@
             document.getElementById('login-wrapper').style.display = 'flex';
         }
 
-        // UPDATED BULLETPROOF REGISTER FUNCTION
         async function submitRegister() {
             const username = document.getElementById('reg-username').value;
             const password = document.getElementById('reg-password').value;
@@ -247,7 +248,6 @@
                 return alert("Please fill all fields to create an account.");
             }
 
-            // Button visually loads
             btn.innerText = "Sending Request... ⏳";
             btn.disabled = true;
 
@@ -258,15 +258,11 @@
                     body: JSON.stringify({ username, password, email, whatsapp })
                 });
                 
-                // Safety check: Did the backend actually respond properly?
-                if (!res.ok) {
-                    throw new Error("Backend server is not ready or missing the update.");
-                }
+                if (!res.ok) throw new Error("Backend server is not ready or missing the update.");
 
                 const data = await res.json();
                 alert(data.message);
                 
-                // Clear inputs
                 document.getElementById('reg-username').value = '';
                 document.getElementById('reg-password').value = '';
                 document.getElementById('reg-email').value = '';
@@ -277,7 +273,6 @@
                 alert("Connection failed! Please make sure your server.js file on GitHub has the newest code.");
                 console.error(err);
             } finally {
-                // This ensures the button ALWAYS unfreezes, no matter what happens
                 btn.innerText = "Create";
                 btn.disabled = false;
             }
@@ -315,13 +310,12 @@
                 document.getElementById('manager-add-range').style.display = "block";
                 document.getElementById('menu-traffic').style.display = "block";
                 document.getElementById('menu-requests').style.display = "block"; 
-                        } else {
+            } else {
                 isManager = false;
                 document.getElementById('display-user-role').innerText = `User: ${user} 👤`;
-                document.getElementById('menu-traffic').style.display = "block"; // NOW USERS CAN SEE IT
+                document.getElementById('menu-traffic').style.display = "block"; // This unlocks Traffic for all users!
                 document.getElementById('menu-requests').style.display = "none"; 
             }
-          
 
             document.getElementById('login-wrapper').style.display = 'none';
             document.getElementById('dashboard-wrapper').style.display = 'flex';
@@ -403,7 +397,6 @@
         async function loadDashboardStats() {
             const gridEl = document.getElementById('top-apps-grid');
             if (!gridEl) return;
-            
             gridEl.innerHTML = '<div style="padding:25px; background:white; grid-column:1/-1; text-align:center;">Loading application stats...</div>';
             
             try {
@@ -435,15 +428,8 @@
                 sortedPlatforms.forEach(pName => {
                     const p = meta[pName];
                     const cnt = counts[pName];
-                    html += `
-                        <div class="app-card">
-                            <div class="app-icon">${p.icon}</div>
-                            <div class="app-name">${pName}</div>
-                            <div class="app-count">${cnt} message${cnt === 1 ? '' : 's'}</div>
-                        </div>
-                    `;
+                    html += `<div class="app-card"><div class="app-icon">${p.icon}</div><div class="app-name">${pName}</div><div class="app-count">${cnt} message${cnt === 1 ? '' : 's'}</div></div>`;
                 });
-
                 gridEl.innerHTML = html;
             } catch(err) {
                 gridEl.innerHTML = '<div style="padding:25px; background:white; grid-column:1/-1; text-align:center; color:red;">Failed to load application stats.</div>';
@@ -508,22 +494,40 @@
 
         async function submitRequest() {
             const prefix = document.getElementById('request-prefix').value;
-            const quantity = document.getElementById('request-quantity').value;
+            const quantity = parseInt(document.getElementById('request-quantity').value);
             
-            const res = await fetch(`${RENDER_BACKEND_URL}/api/request-numbers`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: loggedInUser, prefix, quantity })
-            });
+            if (isNaN(quantity) || quantity < 1 || quantity > 200) {
+                return alert("Please enter a quantity between 1 and 200.");
+            }
             
-            const data = await res.json();
-            closeModal();
-            alert(data.message);
+            const btn = document.querySelector('#request-modal .btn-purple');
+            const originalText = btn.innerText;
+            btn.innerText = "Requesting... ⏳";
+            btn.disabled = true;
             
-            if (data.success) {
-                switchTab('mynumbers');
-            } else {
-                loadRanges();
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/request-numbers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: loggedInUser, prefix, quantity })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    closeModal();
+                    alert(data.message);
+                    switchTab('mynumbers');
+                } else {
+                    alert(data.message);
+                    loadRanges();
+                }
+            } catch(err) {
+                alert("Error claiming range. Please try again.");
+                console.error(err);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -571,6 +575,50 @@
             } catch (err) { console.error(err); }
         }
 
+        // --- NEW FLAG DETECTOR SYSTEM ---
+        const countryData = [
+            { code: "237", flag: "cm", name: "CAMEROON" },
+            { code: "216", flag: "tn", name: "TUNISIA" },
+            { code: "972", flag: "il", name: "ISRAEL" },
+            { code: "229", flag: "bj", name: "BENIN" },
+            { code: "387", flag: "ba", name: "BOSNIA" },
+            { code: "218", flag: "ly", name: "LIBYA" },
+            { code: "95", flag: "mm", name: "MYANMAR" },
+            { code: "63", flag: "ph", name: "PHILIPPINES" },
+            { code: "233", flag: "gh", name: "GHANA" },
+            { code: "77", flag: "kz", name: "KAZAKHSTAN" },
+            { code: "256", flag: "ug", name: "UGANDA" },
+            { code: "62", flag: "id", name: "INDONESIA" },
+            { code: "996", flag: "kg", name: "KYRGYZSTAN" }, 
+            { code: "1", flag: "us", name: "USA/CANADA" },
+            { code: "44", flag: "gb", name: "UK" },
+            { code: "91", flag: "in", name: "INDIA" },
+            { code: "92", flag: "pk", name: "PAKISTAN" },
+            { code: "93", flag: "af", name: "AFGHANISTAN" },
+            { code: "880", flag: "bd", name: "BANGLADESH" },
+            { code: "234", flag: "ng", name: "NIGERIA" }
+        ];
+
+        function getFlagHtml(numberStr) {
+            const num = String(numberStr).replace('+', '');
+            let match = null;
+            
+            for (let i = 0; i < countryData.length; i++) {
+                if (num.startsWith(countryData[i].code)) {
+                    if (!match || countryData[i].code.length > match.code.length) {
+                        match = countryData[i];
+                    }
+                }
+            }
+            
+            if (match) {
+                return `<img src="https://flagcdn.com/w40/${match.flag}.png" style="width: 28px; height: 18px; border-radius: 3px; vertical-align: middle; margin-right: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);" title="${match.name}">`;
+            }
+            // Fallback UN flag (No Emojis!)
+            return `<img src="https://flagcdn.com/w40/un.png" style="width: 28px; height: 18px; border-radius: 3px; vertical-align: middle; margin-right: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);" title="Unknown Region">`; 
+        }
+
+        // --- UPDATED TABLE BUILDER ---
         function buildTrafficTable(dataArray, containerId) {
             if(!dataArray || dataArray.length === 0) {
                 document.getElementById(containerId).innerHTML = "<p>No traffic found yet.</p>";
@@ -578,7 +626,12 @@
             }
             let html = `<table class="data-table"><tr><th>Date</th><th>Number</th><th>Message</th><th>Payout</th></tr>`;
             dataArray.forEach(i => {
-                html += `<tr><td>${i.dt}</td><td>${i.num}</td><td>${i.message}</td><td><span class="payout-badge">$${i.payout}</span></td></tr>`;
+                html += `<tr>
+                    <td style="color: #666; font-size: 13px;">${i.dt}</td>
+                    <td style="font-weight: 600; color: #333;">${getFlagHtml(i.num)} ${i.num}</td>
+                    <td>${i.message}</td>
+                    <td><span class="payout-badge">$${i.payout}</span></td>
+                </tr>`;
             });
             document.getElementById(containerId).innerHTML = html + "</table>";
         }
