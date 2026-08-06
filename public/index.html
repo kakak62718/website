@@ -7,10 +7,10 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; height: 100vh; }
         
-        /* Login & Register Page Styling */
+        /* Login & Register Page Styling (Glassmorphism) */
         .auth-wrapper { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #2b2b40; background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgFQbdwcLkTvjWRf3R7YiEL8Ilz34jdTNlyqH-EmdXtuyYAnWO_yi0zHR6S2wffvdqqvl7hTbeLjkHAslQ8_FVNFnqs8ohualK8kHwBIO_t4qGI5chM54EChiQs_oMq9Sw86IDVXdtV_5pjT0Re0U1TtrH0UIV6zuzY8KtMGj-ZMKItkYybRKH4c7r0DW9L/s1080/Screenshot_2026-08-03-12-56-28-38_948cd9899890cbd5c2798760b2b95377.jpg'); background-size: cover; background-position: center; }
         
-        #register-wrapper { display: none; } /* Hidden by default */
+        #register-wrapper { display: none; } 
         
         .login-card { background-color: rgba(255, 255, 255, 0.25); backdrop-filter: blur(15px); padding: 40px 30px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.3); width: 90%; max-width: 400px; text-align: center; }
         
@@ -102,7 +102,8 @@
             <input type="email" id="reg-email" placeholder="Enter your Gmail ID" />
             <input type="text" id="reg-whatsapp" placeholder="WhatsApp number" />
             
-            <button onclick="submitRegister()">Create</button>
+            <!-- Added id="reg-btn" here so it doesn't crash! -->
+            <button id="reg-btn" onclick="submitRegister()">Create</button>
             <a onclick="showLogin()" class="create-account-link">Already have an account? Login</a>
         </div>
     </div>
@@ -122,7 +123,7 @@
                 <li id="menu-mysms" onclick="switchTab('mysms')">💬 My SMS</li>
                 <li id="menu-traffic" onclick="switchTab('traffic')">🚦 Master Traffic</li>
                 
-                <!-- NEW: Manager Account Requests Tab -->
+                <!-- Account Requests Tab (Manager Only) -->
                 <li id="menu-requests" onclick="switchTab('requests')" style="display:none; color: #00d4ff;">👥 Account Requests</li>
             </ul>
         </div>
@@ -134,17 +135,13 @@
             </div>
             <div class="content-body">
                 
-                <!-- DASHBOARD TAB WITH TOP APPLICATIONS ACCESS -->
                 <div id="dashboard-panel" class="panel-section">
                     <div class="top-apps-container">
-                        <div class="top-apps-header">
-                            Top Applications Access
-                        </div>
+                        <div class="top-apps-header">Top Applications Access</div>
                         <div id="top-apps-grid" class="top-apps-grid"></div>
                     </div>
                 </div>
 
-                <!-- Ranges Panel -->
                 <div id="ranges-panel" class="panel-section">
                     <div id="manager-add-range" style="display:none; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; border: 2px dashed #6f42c1;">
                         <h4>👑 Add New Range & Upload Numbers</h4>
@@ -166,7 +163,6 @@
                     </table>
                 </div>
 
-                <!-- My Numbers Panel -->
                 <div id="mynumbers-panel" class="panel-section">
                     <table class="data-table">
                         <thead>
@@ -176,19 +172,16 @@
                     </table>
                 </div>
 
-                <!-- My SMS Panel -->
                 <div id="mysms-panel" class="panel-section">
                     <h3>My SMS Traffic (Payout: $0.01/msg)</h3>
                     <div id="mysms-table-container">Loading your data...</div>
                 </div>
 
-                <!-- Master Traffic Panel -->
                 <div id="traffic-panel" class="panel-section">
                     <h3>Global Master Traffic</h3>
                     <div id="traffic-table-container">Loading secure data...</div>
                 </div>
 
-                <!-- NEW: Account Requests Panel -->
                 <div id="requests-panel" class="panel-section">
                     <h3>Pending Account Requests</h3>
                     <table class="data-table">
@@ -233,26 +226,30 @@
 
         setInterval(() => document.getElementById('live-clock').innerText = new Date().toLocaleString(), 1000);
 
-        // UI Toggles for Authentication
         function showRegister() {
             document.getElementById('login-wrapper').style.display = 'none';
             document.getElementById('register-wrapper').style.display = 'flex';
         }
+        
         function showLogin() {
             document.getElementById('register-wrapper').style.display = 'none';
             document.getElementById('login-wrapper').style.display = 'flex';
         }
 
-        // Account Registration Logic
         async function submitRegister() {
             const username = document.getElementById('reg-username').value;
             const password = document.getElementById('reg-password').value;
             const email = document.getElementById('reg-email').value;
             const whatsapp = document.getElementById('reg-whatsapp').value;
+            const btn = document.getElementById('reg-btn');
             
             if(!username || !password || !email || !whatsapp) {
                 return alert("Please fill all fields to create an account.");
             }
+
+            // Button visually loads
+            btn.innerText = "Sending Request... ⏳";
+            btn.disabled = true;
 
             try {
                 const res = await fetch(`${RENDER_BACKEND_URL}/api/request-account`, {
@@ -260,12 +257,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password, email, whatsapp })
                 });
-                const data = await res.json();
                 
-                // Show the exact alert message you requested
+                const data = await res.json();
                 alert(data.message);
                 
-                // Clear fields and return to login
                 document.getElementById('reg-username').value = '';
                 document.getElementById('reg-password').value = '';
                 document.getElementById('reg-email').value = '';
@@ -273,11 +268,14 @@
                 showLogin();
                 
             } catch (err) {
-                alert("Error sending request. Please try again.");
+                alert("Error sending request. The server might be asleep, wait a moment and try again.");
+                console.error(err);
+            } finally {
+                btn.innerText = "Create";
+                btn.disabled = false;
             }
         }
 
-        // Remember Me Setup
         window.onload = function() {
             const savedUser = localStorage.getItem('deepSmsUser');
             const savedPass = localStorage.getItem('deepSmsPass');
@@ -304,19 +302,17 @@
             }
 
             loggedInUser = user;
-            
-            // Define Manager Role vs User Role
             if (user === "Kite" && pass === "prince") {
                 isManager = true;
                 document.getElementById('display-user-role').innerText = "Manager: Kite 👑";
                 document.getElementById('manager-add-range').style.display = "block";
                 document.getElementById('menu-traffic').style.display = "block";
-                document.getElementById('menu-requests').style.display = "block"; // Show Account Requests to Manager
+                document.getElementById('menu-requests').style.display = "block"; 
             } else {
                 isManager = false;
                 document.getElementById('display-user-role').innerText = `User: ${user} 👤`;
                 document.getElementById('menu-traffic').style.display = "none";
-                document.getElementById('menu-requests').style.display = "none"; // Hide Account Requests from User
+                document.getElementById('menu-requests').style.display = "none"; 
             }
 
             document.getElementById('login-wrapper').style.display = 'none';
@@ -345,7 +341,6 @@
             if (tab === 'requests') loadAccountRequests();
         }
 
-        // --- ACCOUNT REQUESTS API (Manager Only) ---
         async function loadAccountRequests() {
             const res = await fetch(`${RENDER_BACKEND_URL}/api/account-requests`);
             const data = await res.json();
@@ -365,10 +360,9 @@
 
         async function clearRequest(id) {
             await fetch(`${RENDER_BACKEND_URL}/api/account-requests/${id}`, { method: 'DELETE' });
-            loadAccountRequests(); // Reload the table
+            loadAccountRequests(); 
         }
 
-        // --- DASHBOARD TOP APPLICATIONS LOGIC ---
         function detectPlatform(cli, message) {
             const text = ((cli || '') + ' ' + (message || '')).toLowerCase();
             
@@ -448,7 +442,6 @@
             }
         }
 
-        // --- RANGES API ---
         async function loadRanges() {
             const res = await fetch(`${RENDER_BACKEND_URL}/api/ranges`);
             const data = await res.json();
@@ -497,7 +490,6 @@
             reader.readAsText(file);
         }
 
-        // --- MODAL LOGIC ---
         function openModal(prefix) {
             document.getElementById('request-prefix').value = prefix;
             document.getElementById('request-modal').style.display = 'flex';
@@ -527,7 +519,6 @@
             }
         }
 
-        // --- MY NUMBERS API ---
         async function loadMyNumbers() {
             const res = await fetch(`${RENDER_BACKEND_URL}/api/my-numbers/${loggedInUser}`);
             userNumbersCache = await res.json();
@@ -556,7 +547,6 @@
             a.click();
         }
 
-        // --- TRAFFIC APIs ---
         async function fetchMasterTraffic() {
             try {
                 const res = await fetch(`${RENDER_BACKEND_URL}/api/live-traffic`); 
@@ -585,7 +575,6 @@
             document.getElementById(containerId).innerHTML = html + "</table>";
         }
 
-        // Auto-refresh active tab
         setInterval(() => {
             if(document.getElementById('menu-dashboard').classList.contains('active')) loadDashboardStats();
             if(document.getElementById('menu-traffic').classList.contains('active')) fetchMasterTraffic();
