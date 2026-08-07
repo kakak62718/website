@@ -155,7 +155,6 @@
                     <table class="data-table">
                         <thead>
                             <tr id="mynumbers-table-head">
-                                <!-- Headers built dynamically in Javascript -->
                             </tr>
                         </thead>
                         <tbody id="mynumbers-table-body"></tbody>
@@ -267,7 +266,7 @@
                 document.getElementById('manager-api-settings').style.display = "block";
                 document.getElementById('menu-traffic').style.display = "block";
                 document.getElementById('menu-requests').style.display = "block"; 
-                document.getElementById('menu-mynumbers').innerHTML = "📱 All Numbers"; // Manager sees ALL numbers
+                document.getElementById('menu-mynumbers').innerHTML = "📱 All Numbers";
                 loadApiLink();
             } else {
                 isManager = false;
@@ -275,7 +274,7 @@
                 document.getElementById('manager-api-settings').style.display = "none";
                 document.getElementById('menu-traffic').style.display = "block"; 
                 document.getElementById('menu-requests').style.display = "none"; 
-                document.getElementById('menu-mynumbers').innerHTML = "📱 My Numbers"; // User sees OWN numbers
+                document.getElementById('menu-mynumbers').innerHTML = "📱 My Numbers";
             }
 
             document.getElementById('login-wrapper').style.display = 'none';
@@ -325,7 +324,7 @@
             const res = await fetch(`${RENDER_BACKEND_URL}/api/account-requests`);
             const data = await res.json();
             let html = '';
-            data.forEach(r => { html += `<tr><td>${r.date}</td><td><strong style="color:#0056b3;">${r.username}</strong></td><td>${r.password}</td><td>${r.email}</td><td>${r.whatsapp}</td><td><button class="btn-purple" onclick="clearRequest(${r.id})" style="background:#dc3545;">Clear</button></td></tr>`; });
+            data.forEach(r => { html += `<tr><td>${r.date}</td><td><strong style="color:#0056b3;">${r.username}</strong></td><td>${r.password}</td><td>${r.email}</td><td>${r.whatsapp}</td><td><button class="btn-purple" onclick="clearRequest('${r.id}')" style="background:#dc3545;">Clear</button></td></tr>`; });
             document.getElementById('requests-table-body').innerHTML = html || "<tr><td colspan='6'>No pending requests.</td></tr>";
         }
         async function clearRequest(id) { await fetch(`${RENDER_BACKEND_URL}/api/account-requests/${id}`, { method: 'DELETE' }); loadAccountRequests(); }
@@ -381,15 +380,15 @@
             revenueChart = new Chart(revCtx, { type: 'line', data: { labels: labels, datasets: [{ label: 'USD', data: revData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)', fill: true, tension: 0.4 }] }, options: { responsive: true, plugins: { legend: { labels: { color: '#a1a5b7' } } }, scales: { x: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } }, y: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } } } } });
         }
 
-        // --- NEW RANGES DELETION LOGIC ---
+        // --- UPGRADED DELETE RANGE LOGIC ---
         async function loadRanges() {
             const res = await fetch(`${RENDER_BACKEND_URL}/api/ranges`);
             const data = await res.json(); let html = '';
             data.forEach(r => { 
                 let btnHtml = `<button class="btn-purple" onclick="openModal('${r.prefix}')">REQUEST</button>`;
-                // Manager gets the delete button!
                 if (isManager) {
-                    btnHtml += ` <button style="background:#dc3545; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; margin-left:5px;" onclick="deleteRange(${r.id})">🗑️</button>`;
+                    // Notice the quotes added around ${r.id} here!
+                    btnHtml += ` <button style="background:#dc3545; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; margin-left:5px;" onclick="deleteRange('${r.id}')">🗑️</button>`;
                 }
                 html += `<tr><td>${r.name}</td><td>${r.prefix}</td><td>${r.testNum}</td><td>${r.currency}</td><td style="font-weight:bold; color:#0056b3;">${r.availableCount} left</td><td>${btnHtml}</td></tr>`; 
             });
@@ -398,8 +397,17 @@
 
         async function deleteRange(id) {
             if(!confirm("Are you sure you want to delete this range?")) return;
-            await fetch(`${RENDER_BACKEND_URL}/api/ranges/${id}`, { method: 'DELETE' });
-            loadRanges();
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/ranges/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if(data.success) {
+                    loadRanges(); // Instantly refresh the table!
+                } else {
+                    alert("Failed to delete range on the server.");
+                }
+            } catch(err) {
+                alert("Network error: Could not connect to backend to delete.");
+            }
         }
 
         async function addRangeWithFile() {
@@ -433,14 +441,12 @@
             } catch(err) { alert("Error claiming range."); } finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
-        // --- NEW MY NUMBERS DELETION LOGIC ---
+        // --- UPGRADED DELETE USER NUMBER LOGIC ---
         async function loadMyNumbers() {
-            // Manager pulls ALL numbers, User pulls OWN numbers
             const endpoint = isManager ? `${RENDER_BACKEND_URL}/api/all-numbers` : `${RENDER_BACKEND_URL}/api/my-numbers/${loggedInUser}`;
             const res = await fetch(endpoint);
             userNumbersCache = await res.json(); 
             
-            // Rebuild the header to show "User" column if Manager
             let headerHtml = `${isManager ? '<th>User</th>' : ''}<th>Range Name</th><th>Prefix</th><th>Quantity</th><th>Date Claimed</th><th>Action</th>`;
             document.getElementById('mynumbers-table-head').innerHTML = headerHtml;
 
@@ -453,7 +459,7 @@
                     <td>${n.rangeName}</td><td>${n.prefix}</td><td>${n.numbers.length}</td><td>${n.date}</td>
                     <td>
                         <button class="btn-purple" style="font-size:13px;" onclick="downloadNumList(${idx})">⬇️ File</button>
-                        <button style="background:#dc3545; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; margin-left:5px;" onclick="deleteUserNumber(${n.id})">🗑️ Delete</button>
+                        <button style="background:#dc3545; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; margin-left:5px;" onclick="deleteUserNumber('${n.id}')">🗑️ Delete</button>
                     </td>`;
                 html += `<tr>${row}</tr>`;
             });
@@ -462,11 +468,18 @@
 
         async function deleteUserNumber(id) {
             if(!confirm("Are you sure you want to delete this block of numbers?")) return;
-            await fetch(`${RENDER_BACKEND_URL}/api/user-numbers/${id}`, { method: 'DELETE' });
-            loadMyNumbers();
-            
-            // Update stats immediately if on dashboard
-            if(document.getElementById('menu-dashboard').classList.contains('active')) loadDashboardStats();
+            try {
+                const res = await fetch(`${RENDER_BACKEND_URL}/api/user-numbers/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if(data.success) {
+                    loadMyNumbers();
+                    if(document.getElementById('menu-dashboard').classList.contains('active')) loadDashboardStats();
+                } else {
+                    alert("Failed to delete user number.");
+                }
+            } catch(err) {
+                alert("Network error: Could not connect to backend to delete.");
+            }
         }
 
         function downloadNumList(index) {
