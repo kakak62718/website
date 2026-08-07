@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DEEP SMS PANEL</title>
+    <!-- Import Chart.js for the beautiful graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; height: 100vh; }
         
@@ -65,15 +67,15 @@
         .manager-input-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
         .manager-input-row input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 
-        /* Top Applications Access Dashboard Styling */
-        .top-apps-container { background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: hidden; margin-top: 15px; border: 1px solid #e2e8f0; }
-        .top-apps-header { background-color: #c59b27; color: white; padding: 14px 20px; font-weight: bold; font-size: 16px; letter-spacing: 0.5px; }
-        .top-apps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 1px; background-color: #e2e8f0; }
-        .app-card { background: white; padding: 22px 12px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.2s; }
-        .app-card:hover { background: #fdfdfd; }
-        .app-icon { font-size: 32px; margin-bottom: 8px; line-height: 1; }
-        .app-name { font-weight: 700; font-size: 14px; color: #2d3748; word-break: break-word; }
-        .app-count { font-size: 12px; color: #718096; margin-top: 4px; font-weight: 500; }
+        /* 🔥 NEW DARK MODE DASHBOARD GRAPHS STYLING 🔥 */
+        #dashboard-panel { background: #13141f; margin: -30px; padding: 30px; min-height: 100%; border-radius: 8px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background-color: #1a1a2e; color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid #2a2a3e; }
+        .stat-card h4 { margin: 0 0 10px 0; font-size: 13px; color: #8b8b9e; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 26px; font-weight: bold; margin: 0; color: #fff; }
+        .chart-container { background-color: #1a1a2e; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 1px solid #2a2a3e; }
+        .chart-header { display: flex; align-items: center; color: #fff; font-size: 16px; font-weight: bold; margin-bottom: 15px; }
+        .chart-header span { margin-right: 10px; font-size: 20px; }
     </style>
 </head>
 <body>
@@ -134,10 +136,25 @@
             </div>
             <div class="content-body">
                 
+                <!-- 🔥 NEW GRAPH DASHBOARD TAB 🔥 -->
                 <div id="dashboard-panel" class="panel-section">
-                    <div class="top-apps-container">
-                        <div class="top-apps-header">Top Applications Access</div>
-                        <div id="top-apps-grid" class="top-apps-grid"></div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><h4>Balance</h4><div class="value" id="stat-balance">$0.00</div></div>
+                        <div class="stat-card"><h4>Total Messages</h4><div class="value" id="stat-total-msg">0</div></div>
+                        <div class="stat-card"><h4>Messages Today</h4><div class="value" id="stat-today-msg">0</div></div>
+                        <div class="stat-card"><h4>Claimed Numbers</h4><div class="value" id="stat-numbers">0</div></div>
+                        <div class="stat-card"><h4>Total Sender IDs</h4><div class="value" id="stat-senders">0</div></div>
+                        <div class="stat-card"><h4>Payout Rate</h4><div class="value">$0.012</div></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header"><span>📈</span> Daily Messages</div>
+                        <canvas id="messagesChart" height="70"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <div class="chart-header"><span>💰</span> Daily Revenue</div>
+                        <canvas id="revenueChart" height="70"></canvas>
                     </div>
                 </div>
 
@@ -224,6 +241,10 @@
         let loggedInUser = '';
         let isManager = false;
         let userNumbersCache = [];
+        
+        // Variables to hold the chart instances
+        let messagesChart = null;
+        let revenueChart = null;
 
         setInterval(() => document.getElementById('live-clock').innerText = new Date().toLocaleString(), 1000);
 
@@ -313,13 +334,15 @@
             } else {
                 isManager = false;
                 document.getElementById('display-user-role').innerText = `User: ${user} 👤`;
-                document.getElementById('menu-traffic').style.display = "block"; // This unlocks Traffic for all users!
+                document.getElementById('menu-traffic').style.display = "block"; 
                 document.getElementById('menu-requests').style.display = "none"; 
             }
 
             document.getElementById('login-wrapper').style.display = 'none';
             document.getElementById('dashboard-wrapper').style.display = 'flex';
-            switchTab('dashboard');
+            
+            // Automatically pre-load numbers cache for stats
+            loadMyNumbers().then(() => switchTab('dashboard'));
         }
 
         function logout() {
@@ -365,40 +388,8 @@
             loadAccountRequests(); 
         }
 
-        function detectPlatform(cli, message) {
-            const text = ((cli || '') + ' ' + (message || '')).toLowerCase();
-            
-            if (text.includes('whatsapp') || text.includes('wa')) return { name: 'WhatsApp', icon: '💬' };
-            if (text.includes('tiktok')) return { name: 'TikTok', icon: '🎵' };
-            if (text.includes('spaylater') || text.includes('spay')) return { name: 'SPayLaterPH', icon: '✉️' };
-            if (text.includes('viber')) return { name: 'Viber', icon: '🟣' };
-            if (text.includes('apple')) return { name: 'Apple', icon: '🍎' };
-            if (text.includes('facebook') || text.includes('fb')) return { name: 'Facebook', icon: '📘' };
-            if (text.includes('paypal')) return { name: 'PayPal', icon: '🅿️' };
-            if (text.includes('authmsg')) return { name: 'AUTHMSG', icon: '✉️' };
-            if (text.includes('shopee')) return { name: 'Shopee', icon: '🛍️' };
-            if (text.includes('huawei')) return { name: 'Huawei', icon: '✉️' };
-            if (text.includes('microsoft') || text.includes('msverify')) return { name: 'Microsoft', icon: '🪟' };
-            if (text.includes('maribank')) return { name: 'MariBank', icon: '✉️' };
-            if (text.includes('qsms')) return { name: 'Qsms', icon: '✉️' };
-            if (text.includes('amazon')) return { name: 'Amazon', icon: '📦' };
-            if (text.includes('douyin')) return { name: 'Douyin', icon: '✉️' };
-            if (text.includes('bolt')) return { name: 'Bolt', icon: '⚡' };
-            if (text.includes('iat-sms') || text.includes('iatsms')) return { name: 'iATSMS', icon: '✉️' };
-            if (text.includes('indrive')) return { name: 'inDrive', icon: '🚗' };
-            if (text.includes('infosms')) return { name: 'InfoSMS', icon: '✉️' };
-            if (text.includes('google')) return { name: 'Google', icon: '🔍' };
-            if (text.includes('telegram')) return { name: 'Telegram', icon: '✈️' };
-            
-            const fallbackName = cli && cli.trim() !== '' ? cli.trim() : 'Other Service';
-            return { name: fallbackName, icon: '✉️' };
-        }
-
+        // 🔥 NEW GRAPH DATA GENERATOR 🔥
         async function loadDashboardStats() {
-            const gridEl = document.getElementById('top-apps-grid');
-            if (!gridEl) return;
-            gridEl.innerHTML = '<div style="padding:25px; background:white; grid-column:1/-1; text-align:center;">Loading application stats...</div>';
-            
             try {
                 const endpoint = isManager 
                     ? `${RENDER_BACKEND_URL}/api/live-traffic` 
@@ -408,32 +399,108 @@
                 const result = await res.json();
                 const messages = result.data || [];
                 
-                if (messages.length === 0) {
-                    gridEl.innerHTML = '<div style="padding:30px; background:white; grid-column:1/-1; text-align:center; color:#666;">No message traffic recorded yet.</div>';
-                    return;
+                let todayMsgCount = 0;
+                let totalRevenue = 0;
+                let uniqueSenders = new Set();
+                
+                // Use UTC date format to reliably match traffic timestamps
+                const todayPrefix = new Date().toISOString().split('T')[0];
+
+                messages.forEach(m => {
+                    totalRevenue += 0.012; 
+                    if (m.dt && m.dt.startsWith(todayPrefix)) todayMsgCount++;
+                    
+                    // We extract the service name from message content to mimic "Sender IDs"
+                    const serviceName = m.message.split(' ')[0] || m.cli; 
+                    uniqueSenders.add(serviceName);
+                });
+
+                // Get Total Claimed Numbers
+                let claimedCount = 0;
+                if (userNumbersCache.length > 0) {
+                    claimedCount = userNumbersCache.reduce((sum, current) => sum + current.numbers.length, 0);
                 }
 
-                const counts = {};
-                const meta = {};
+                // Update Cards
+                document.getElementById('stat-balance').innerText = '$' + totalRevenue.toFixed(3);
+                document.getElementById('stat-total-msg').innerText = messages.length;
+                document.getElementById('stat-today-msg').innerText = todayMsgCount;
+                document.getElementById('stat-numbers').innerText = claimedCount;
+                document.getElementById('stat-senders').innerText = uniqueSenders.size;
 
-                messages.forEach(msg => {
-                    const platform = detectPlatform(msg.cli, msg.message);
-                    counts[platform.name] = (counts[platform.name] || 0) + 1;
-                    meta[platform.name] = platform;
+                // --- Generate Graph Data for Last 7 Days ---
+                const labels = [];
+                const msgData = [0, 0, 0, 0, 0, 0, 0];
+                const revData = [0, 0, 0, 0, 0, 0, 0];
+
+                for(let i = 6; i >= 0; i--) {
+                    let d = new Date();
+                    d.setDate(d.getDate() - i);
+                    labels.push(d.toISOString().split('T')[0]); // Raw format for mapping
+                }
+
+                messages.forEach(m => {
+                    if(!m.dt) return;
+                    const datePart = m.dt.split(' ')[0]; // Gets just the YYYY-MM-DD
+                    const dayIndex = labels.indexOf(datePart);
+                    
+                    if(dayIndex !== -1) {
+                        msgData[dayIndex]++;
+                        revData[dayIndex] += 0.012;
+                    }
+                });
+                
+                // Format labels beautifully for the graph (e.g., "Aug 06")
+                const prettyLabels = labels.map(labelStr => {
+                    const d = new Date(labelStr);
+                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 });
 
-                const sortedPlatforms = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
-
-                let html = '';
-                sortedPlatforms.forEach(pName => {
-                    const p = meta[pName];
-                    const cnt = counts[pName];
-                    html += `<div class="app-card"><div class="app-icon">${p.icon}</div><div class="app-name">${pName}</div><div class="app-count">${cnt} message${cnt === 1 ? '' : 's'}</div></div>`;
-                });
-                gridEl.innerHTML = html;
+                drawCharts(prettyLabels, msgData, revData);
+                
             } catch(err) {
-                gridEl.innerHTML = '<div style="padding:25px; background:white; grid-column:1/-1; text-align:center; color:red;">Failed to load application stats.</div>';
+                console.error("Dashboard error", err);
             }
+        }
+
+        function drawCharts(labels, msgData, revData) {
+            // Setup Chart 1: Messages (Blue)
+            const msgCtx = document.getElementById('messagesChart').getContext('2d');
+            if (messagesChart) messagesChart.destroy();
+            messagesChart = new Chart(msgCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Sent',
+                        data: msgData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { labels: { color: '#a1a5b7' } } }, scales: { x: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } }, y: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } } } }
+            });
+
+            // Setup Chart 2: Revenue (Green)
+            const revCtx = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(revCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'USD',
+                        data: revData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { labels: { color: '#a1a5b7' } } }, scales: { x: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } }, y: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } } } }
+            });
         }
 
         async function loadRanges() {
@@ -575,8 +642,8 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- NEW FLAG DETECTOR SYSTEM ---
         const countryData = [
+            { code: "996", flag: "kg", name: "KYRGYZSTAN" },
             { code: "237", flag: "cm", name: "CAMEROON" },
             { code: "216", flag: "tn", name: "TUNISIA" },
             { code: "972", flag: "il", name: "ISRAEL" },
@@ -589,7 +656,6 @@
             { code: "77", flag: "kz", name: "KAZAKHSTAN" },
             { code: "256", flag: "ug", name: "UGANDA" },
             { code: "62", flag: "id", name: "INDONESIA" },
-            { code: "996", flag: "kg", name: "KYRGYZSTAN" }, 
             { code: "1", flag: "us", name: "USA/CANADA" },
             { code: "44", flag: "gb", name: "UK" },
             { code: "91", flag: "in", name: "INDIA" },
@@ -599,7 +665,7 @@
             { code: "234", flag: "ng", name: "NIGERIA" }
         ];
 
-        function getFlagHtml(numberStr) {
+        function getCountryInfo(numberStr) {
             const num = String(numberStr).replace('+', '');
             let match = null;
             
@@ -612,13 +678,18 @@
             }
             
             if (match) {
-                return `<img src="https://flagcdn.com/w40/${match.flag}.png" style="width: 28px; height: 18px; border-radius: 3px; vertical-align: middle; margin-right: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);" title="${match.name}">`;
+                return {
+                    name: match.name,
+                    img: `<img src="https://flagcdn.com/w40/${match.flag}.png" style="width: 28px; height: 18px; border-radius: 3px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">`
+                };
             }
-            // Fallback UN flag (No Emojis!)
-            return `<img src="https://flagcdn.com/w40/un.png" style="width: 28px; height: 18px; border-radius: 3px; vertical-align: middle; margin-right: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.2);" title="Unknown Region">`; 
+            
+            return {
+                name: "UNKNOWN COUNTRY",
+                img: `<img src="https://flagcdn.com/w40/un.png" style="width: 28px; height: 18px; border-radius: 3px; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,0.2);">`
+            };
         }
 
-        // --- UPDATED TABLE BUILDER ---
         function buildTrafficTable(dataArray, containerId) {
             if(!dataArray || dataArray.length === 0) {
                 document.getElementById(containerId).innerHTML = "<p>No traffic found yet.</p>";
@@ -626,9 +697,18 @@
             }
             let html = `<table class="data-table"><tr><th>Date</th><th>Number</th><th>Message</th><th>Payout</th></tr>`;
             dataArray.forEach(i => {
+                const country = getCountryInfo(i.num);
                 html += `<tr>
                     <td style="color: #666; font-size: 13px;">${i.dt}</td>
-                    <td style="font-weight: 600; color: #333;">${getFlagHtml(i.num)} ${i.num}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${country.img}
+                            <div>
+                                <div style="font-weight: bold; font-size: 12px; color: #333; letter-spacing: 0.5px;">${country.name}</div>
+                                <div style="font-weight: 600; color: #555; font-size: 14px;">${i.num}</div>
+                            </div>
+                        </div>
+                    </td>
                     <td>${i.message}</td>
                     <td><span class="payout-badge">$${i.payout}</span></td>
                 </tr>`;
