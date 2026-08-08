@@ -163,6 +163,18 @@
 
                 <div id="mysms-panel" class="panel-section">
                     <h3>My SMS Traffic (Payout: $0.012/msg)</h3>
+
+                    <!-- NEW: Personal User API Box -->
+                    <div style="margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #0dcaf0; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <h4 style="margin-top:0; color:#333;">🔗 Your Personal API Link</h4>
+                        <p style="font-size:13px; color:#666; margin-top:-5px; margin-bottom:15px;">Use this JSON link to fetch your private SMS traffic directly into your own software, bot, or script.</p>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="my-api-link" readonly style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #f8f9fa; color: #555; font-family: monospace;">
+                            <button class="btn-purple" style="background:#0dcaf0; color:#000;" onclick="copyMyApi()">Copy Link</button>
+                        </div>
+                    </div>
+                    <!-- End API Box -->
+
                     <div id="mysms-table-container">Loading your data...</div>
                 </div>
 
@@ -259,6 +271,10 @@
             else { localStorage.removeItem('deepSmsUser'); localStorage.removeItem('deepSmsPass'); }
 
             loggedInUser = user;
+            
+            // Set the Personal API Link for this specific user
+            document.getElementById('my-api-link').value = `${RENDER_BACKEND_URL}/api/my-sms/${loggedInUser}`;
+
             if (user === "Kite" && pass === "prince") {
                 isManager = true;
                 document.getElementById('display-user-role').innerText = "Manager: Kite 👑";
@@ -283,6 +299,13 @@
         }
 
         function logout() { loggedInUser = ''; document.getElementById('dashboard-wrapper').style.display = 'none'; document.getElementById('login-wrapper').style.display = 'flex'; }
+
+        function copyMyApi() {
+            const linkInput = document.getElementById('my-api-link');
+            linkInput.select();
+            document.execCommand("copy");
+            alert("Personal API Link copied to clipboard! 📋");
+        }
 
         function switchTab(tab) {
             document.querySelectorAll('.panel-section').forEach(p => p.classList.remove('active-panel'));
@@ -380,14 +403,13 @@
             revenueChart = new Chart(revCtx, { type: 'line', data: { labels: labels, datasets: [{ label: 'USD', data: revData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)', fill: true, tension: 0.4 }] }, options: { responsive: true, plugins: { legend: { labels: { color: '#a1a5b7' } } }, scales: { x: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } }, y: { ticks: { color: '#a1a5b7' }, grid: { color: '#2a2a3e' } } } } });
         }
 
-        // --- UPGRADED DELETE RANGE LOGIC ---
+        // --- RANGES LOGIC ---
         async function loadRanges() {
             const res = await fetch(`${RENDER_BACKEND_URL}/api/ranges`);
             const data = await res.json(); let html = '';
             data.forEach(r => { 
                 let btnHtml = `<button class="btn-purple" onclick="openModal('${r.prefix}')">REQUEST</button>`;
                 if (isManager) {
-                    // Notice the quotes added around ${r.id} here!
                     btnHtml += ` <button style="background:#dc3545; color:white; border:none; padding:8px; border-radius:4px; cursor:pointer; font-weight:bold; margin-left:5px;" onclick="deleteRange('${r.id}')">🗑️</button>`;
                 }
                 html += `<tr><td>${r.name}</td><td>${r.prefix}</td><td>${r.testNum}</td><td>${r.currency}</td><td style="font-weight:bold; color:#0056b3;">${r.availableCount} left</td><td>${btnHtml}</td></tr>`; 
@@ -400,14 +422,8 @@
             try {
                 const res = await fetch(`${RENDER_BACKEND_URL}/api/ranges/${id}`, { method: 'DELETE' });
                 const data = await res.json();
-                if(data.success) {
-                    loadRanges(); // Instantly refresh the table!
-                } else {
-                    alert("Failed to delete range on the server.");
-                }
-            } catch(err) {
-                alert("Network error: Could not connect to backend to delete.");
-            }
+                if(data.success) { loadRanges(); } else { alert("Failed to delete range."); }
+            } catch(err) { alert("Network error deleting range."); }
         }
 
         async function addRangeWithFile() {
@@ -441,7 +457,7 @@
             } catch(err) { alert("Error claiming range."); } finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
-        // --- UPGRADED DELETE USER NUMBER LOGIC ---
+        // --- MY NUMBERS LOGIC ---
         async function loadMyNumbers() {
             const endpoint = isManager ? `${RENDER_BACKEND_URL}/api/all-numbers` : `${RENDER_BACKEND_URL}/api/my-numbers/${loggedInUser}`;
             const res = await fetch(endpoint);
@@ -477,9 +493,7 @@
                 } else {
                     alert("Failed to delete user number.");
                 }
-            } catch(err) {
-                alert("Network error: Could not connect to backend to delete.");
-            }
+            } catch(err) { alert("Network error deleting user number."); }
         }
 
         function downloadNumList(index) {
@@ -487,6 +501,7 @@
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([textContent], { type: 'text/plain' })); a.download = `${data.rangeName}_${data.prefix}_Numbers.txt`; a.click();
         }
 
+        // --- TRAFFIC LOGIC ---
         async function fetchMasterTraffic() {
             try {
                 const res = await fetch(`${RENDER_BACKEND_URL}/api/live-traffic`); 
